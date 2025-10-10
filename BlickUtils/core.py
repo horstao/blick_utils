@@ -191,7 +191,11 @@ class BlickUtils:
 
         elif os.path.isfile(whatever):
             # Load from file path
-            pil_im = PIL_Image.open(whatever) 
+            try:
+                pil_im = PIL_Image.open(whatever) 
+            except Exception as e:
+                print(f"Warning: Unable to load image from {whatever}: {e}")
+                
         
         elif isinstance(whatever, (str)):
             # Assume base64 string
@@ -211,7 +215,10 @@ class BlickUtils:
             array = whatever
 
             import numpy as np
-            return PIL_Image.fromarray(whatever)
+            try:
+                pil_im = PIL_Image.fromarray(whatever)
+            except Exception as e:
+                print(f"Warning: Unable to convert numpy array to image: {e}")
 
         if pil_im is not None:   
             # Fix EXIF orientation
