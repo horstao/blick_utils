@@ -289,7 +289,7 @@ class BlickUtils:
         dir_path = Path(dir)
         
         if not dir_path.exists():
-            return []]
+            return []
         
         if not dir_path.is_dir():
             return []
