@@ -230,6 +230,12 @@ class BlickUtils:
 
         return pil_im
     
+    @staticmethod
+    def get_img(whatever, flatten=True):
+        """
+        Alias for get_pil to maintain compatibility
+        """
+        return BlickUtils.get_pil(whatever, flatten)
     
 
     @staticmethod
