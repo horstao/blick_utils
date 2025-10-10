@@ -92,9 +92,12 @@ class BlickUtils:
                 
                 return gpu_info
             except Exception as e:
-                pass
+                print(f"Warning: install GPUtil for better GPU info: pip install GPUtil")
+        else:
+            print(f"Warning: install GPUtil for better GPU info: pip install GPUtil")
 
         if torch is None:
+            print(f"Warning: install torch with CUDA for correct device detection: pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cu126     - Further info :https://pytorch.org/get-started/locally/")
             return gpu_info
         
         if torch.cuda.is_available():
@@ -127,7 +130,8 @@ class BlickUtils:
         """
         try:
             import torch
-        except ImportError:
+        except:
+            print(f"Warning: install torch with CUDA for correct device detection: pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cu126     - Further info :https://pytorch.org/get-started/locally/")
             return "cpu"
 
         return torch.device(f"cuda:{id}" if torch.cuda.is_available() else "cpu")
@@ -176,9 +180,13 @@ class BlickUtils:
         elif str(whatever).startswith("http://") or str(whatever).startswith("https://"):
             # Load from URL
             import requests
-            response = requests.get(str(whatever).strip())
-            response.raise_for_status()
-            pil_im = PIL_Image.open(BytesIO(response.content))
+            try:
+                response = requests.get(str(whatever).strip())
+                #response.raise_for_status()
+                pil_im = PIL_Image.open(BytesIO(response.content))
+            except Exception as e:
+                print(f"Warning: Unable to get image from URL: {e}")
+                return None
 
         elif os.path.isfile(whatever):
             # Load from file path
@@ -186,12 +194,16 @@ class BlickUtils:
         
         elif isinstance(whatever, (str)):
             # Assume base64 string
-            base64_str = str(whatever).strip()
-            # Remove data URI prefix if present
-            if "," in base64_str:
-                base64_str = base64_str.split(",")[1]
-            image_data = base64.b64decode(base64_str)
-            pil_im = PIL_Image.open(BytesIO(image_data))
+            try:
+                base64_str = str(whatever).strip()
+                # Remove data URI prefix if present
+                if "," in base64_str:
+                    base64_str = base64_str.split(",")[1]
+                image_data = base64.b64decode(base64_str)
+                pil_im = PIL_Image.open(BytesIO(image_data))
+            except Exception as e:
+                print(f"Warning: Unable to get image from Base64: {e}")
+                return None
         
         else:
             # Assume numpy array
@@ -370,8 +382,9 @@ if __name__ == "__main__":
 
     print('get_gpu_info(): ', bkt.get_gpu_info())
     print('get_device(): ', bkt.get_device())
-    print('get_pil(url): ', bkt.get_pil('https://promo-app-v1.s3.amazonaws.com/media/evidences/0ed22122-5300-4197-aa4a-f94536dc5f14__ir__00c43da3-80ff-44a0-a74e-1c46bf9305c3.webp').size)
+    print('get_pil(invalid): ', bkt.get_pil('jkjshkadf'))
+    print('get_pil(url): ', bkt.get_pil('http://archive.net.im/images/TV.png').size)
     print('get_pil(base64): ', bkt.get_pil('data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==').size)
     print('get_files(): ', bkt.get_files())
     print('get_dirs(): ', bkt.get_dirs())
-    print('dir2df(): \n', bkt.dir2df('.', '.py'))
+    print('dir2df(): \n', bkt.dir2df('.'))
