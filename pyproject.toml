@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "BlickUtils"
 version = "0.2.0"
 description = "A collection of utility functions for Blick Technologies"
-authors = [{ name = "Your Name", email = "your@email.com" }]
+authors = [{ name = "Horst Erdmann", email = "horstao@gmail.com" }]
 dependencies = [
     "numpy>=1.0.0",
     "GPUtil>=1.0.0",
