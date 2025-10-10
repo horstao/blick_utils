@@ -168,6 +168,7 @@ class BlickUtils:
 
         # Other imports are done on demand to avoid unnecessary dependencies
         from PIL import Image as PIL_Image
+        from PIL import ImageOps
 
         if BlickUtils.is_empty(whatever):
             return None
@@ -212,7 +213,11 @@ class BlickUtils:
             import numpy as np
             return PIL_Image.fromarray(whatever)
 
-        if pil_im is not None:        
+        if pil_im is not None:   
+            # Fix EXIF orientation
+            pil_img = ImageOps.exif_transpose(pil_img)     
+            
+            # Flatten to RGB if needed
             if flatten:
                 pil_im = pil_im.convert("RGB")
 
