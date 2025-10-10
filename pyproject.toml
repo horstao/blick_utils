@@ -21,6 +21,6 @@ dependencies = [
     "numpy",
     "GPUtil",
     "requests",
-    "torch"
+    "torch",
     "pandas",
 ]
