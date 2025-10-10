@@ -4,8 +4,8 @@ with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 setup(
-    name="blick_utils",
-    version="0.1.0",
+    name="BlickUtils",
+    version="0.2.0",
     author="Horst Erdmann",
     author_email="horstao@gmail.com",
     description="Blick Technologies Utilities Functions",

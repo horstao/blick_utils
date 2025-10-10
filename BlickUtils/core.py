@@ -331,7 +331,41 @@ class BlickUtils:
         
         return sorted(dirs)
     
-    
+        
+    @staticmethod 
+    def dir2df(directory='.', ext='*', recursive=False):
+        """
+        Returns a pandas DataFrame with files in 3 columns: file_path, file_name, dir
+        
+        Args:
+            directory: Directory path to search
+            ext: File extension(s) to filter by. Options:
+                - '*' or None: all files
+                - '.mp4': specific extension
+                - ['.mp4', '.avi', '.mov']: extensions list
+            recursive: Whether to search subdirectories recursively
+            
+        Returns:
+            pd.DataFrame: DataFrame with file paths and names
+        """
+        import pandas as pd
+        
+        files = BlickUtils.get_files(directory=directory, ext=ext, recursive=recursive)
+        
+        if not files:
+            return pd.DataFrame(columns=['fullpath', 'filename', 'dir'])
+        
+        data = {
+            'fullpath': files,
+            'filename': [os.path.basename(f) for f in files],
+            'dir': [str(os.path.dirname(f)).split(os.path.sep)[-1] for f in files]            
+        }
+        
+        df = pd.DataFrame(data)
+        
+        return df
+        
+        
 
 if __name__ == "__main__":    
     bkt = BlickUtils
@@ -342,3 +376,4 @@ if __name__ == "__main__":
     print('get_pil(base64): ', bkt.get_pil('data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==').size)
     print('get_files(): ', bkt.get_files())
     print('get_dirs(): ', bkt.get_dirs())
+    print('dir2df(): \n', bkt.dir2df('.', '.py'))
