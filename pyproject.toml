@@ -18,10 +18,9 @@ classifiers = [
 ]
 
 dependencies = [
-    "numpy>=1.0.0",
-    "GPUtil>=1.0.0",
-    "requests>=1.0.0",
-    "pandas>=1.0.0",
-    "requests>=2.0.0",
-    "torch>=1.0.0"
+    "numpy",
+    "GPUtil",
+    "requests",
+    "torch"
+    "pandas",
 ]

@@ -1,11 +1,9 @@
 """
 Main utilities class for blick_utils
 """
-import os
 import base64
+import os
 from io import BytesIO
-from pathlib import Path
-from typing import Union, List, Optional
 
 
 class BlickUtils:
@@ -223,7 +221,7 @@ class BlickUtils:
                 - ['.mp4', '.avi', '.mov']: extensions list
             recursive: if True, searches subdirectories recursively
         Returns:
-            list: full paths of matching files
+            List[str]: full paths of matching files
         """
         from pathlib import Path
         
