@@ -96,7 +96,9 @@ class BlickUtils:
             except Exception as e:
                 pass
 
- 
+        if torch is None:
+            return gpu_info
+        
         if torch.cuda.is_available():
             gpu_info["cuda_available"] = True
             gpu_info["cuda_count"] = torch.cuda.device_count()
@@ -131,6 +133,18 @@ class BlickUtils:
             return "cpu"
 
         return torch.device(f"cuda:{id}" if torch.cuda.is_available() else "cpu")
+
+
+    @staticmethod
+    def get_cuda(id=0):
+        """Alias for get_gpu to maintain compatibility"""
+        return BlickUtils.get_gpu(id)
+
+
+    @staticmethod
+    def get_device(id=0):
+        """Alias for get_gpu to maintain compatibility"""
+        return BlickUtils.get_gpu(id)
 
     
     @staticmethod
@@ -270,7 +284,7 @@ class BlickUtils:
             
 
     @staticmethod
-    def get_dirs(directory, recursive = False):
+    def get_dirs(directory='.', recursive = False):
         """
         Get all directories in a directory
         
@@ -286,7 +300,7 @@ class BlickUtils:
         if BlickUtils.is_empty(directory):
             return []
         
-        dir_path = Path(dir)
+        dir_path = Path(directory)
         
         if not dir_path.exists():
             return []
@@ -316,3 +330,15 @@ class BlickUtils:
                 continue
         
         return sorted(dirs)
+    
+    
+
+if __name__ == "__main__":    
+    bkt = BlickUtils
+
+    print('get_gpu_info(): ', bkt.get_gpu_info())
+    print('get_device(): ', bkt.get_device())
+    print('get_pil(url): ', bkt.get_pil('https://promo-app-v1.s3.amazonaws.com/media/evidences/0ed22122-5300-4197-aa4a-f94536dc5f14__ir__00c43da3-80ff-44a0-a74e-1c46bf9305c3.webp').size)
+    print('get_pil(base64): ', bkt.get_pil('data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==').size)
+    print('get_files(): ', bkt.get_files())
+    print('get_dirs(): ', bkt.get_dirs())
