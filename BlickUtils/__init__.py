@@ -6,4 +6,8 @@ __version__ = "0.1.0"
 
 from .core import BlickUtils
 
-__all__ = ["BlickUtils"]
+# Dynamically expose all static methods:
+for name in dir(BlickUtils):
+    attr = getattr(BlickUtils, name)
+    if callable(attr):
+        globals()[name] = attr
