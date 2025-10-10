@@ -215,7 +215,7 @@ class BlickUtils:
 
         if pil_im is not None:   
             # Fix EXIF orientation
-            pil_img = ImageOps.exif_transpose(pil_img)     
+            pil_im = ImageOps.exif_transpose(pil_im)     
             
             # Flatten to RGB if needed
             if flatten:
