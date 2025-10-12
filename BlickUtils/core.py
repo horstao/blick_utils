@@ -708,8 +708,6 @@ class BlickUtils:
         """
         
         import zipfile
-        import zlib
-        import base64
         from pathlib import Path
         
         if BlickUtils.is_empty(input):
@@ -745,6 +743,8 @@ class BlickUtils:
         
         # Otherwise, treat as compressed string
         else:
+            import zlib
+            import base64
             try:
                 # Decode from base64
                 compressed_bytes = base64.b64decode(input)
