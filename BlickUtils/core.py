@@ -1,9 +1,8 @@
 """
 Main utilities class for blick_utils
 """
-import base64
 import os
-from io import BytesIO
+import subprocess
 
 
 class BlickUtils:
@@ -167,8 +166,10 @@ class BlickUtils:
         """
 
         # Other imports are done on demand to avoid unnecessary dependencies
+        
         from PIL import Image as PIL_Image
         from PIL import ImageOps
+        from io import BytesIO
 
         if BlickUtils.is_empty(whatever):
             return None
@@ -199,6 +200,8 @@ class BlickUtils:
         
         elif isinstance(whatever, (str)):
             # Assume base64 string
+            import base64
+
             try:
                 base64_str = str(whatever).strip()
                 # Remove data URI prefix if present
@@ -230,6 +233,34 @@ class BlickUtils:
 
         return pil_im
     
+
+    @staticmethod
+    def get_base64(pil_image):
+        """
+        Convert a PIL Image to base64 string.
+        
+        Args:
+            pil_image: PIL Image object
+            
+        Returns:
+            str: Base64 encoded string of the image
+        """
+        import base64
+        from io import BytesIO
+
+        buffered = BytesIO()
+        im = BlickUtils.get_pil(pil_image, flatten=True)
+        if im is None:
+            return None
+        try:
+            im.save(buffered, format="PNG")
+            img_bytes = buffered.getvalue()
+            return base64.b64encode(img_bytes).decode('utf-8')
+        except Exception as e:
+            print(f"Warning: Unable to convert image to Base64: {e}")
+            return None
+                    
+    
     @staticmethod
     def get_img(whatever, flatten=True):
         """
@@ -258,7 +289,8 @@ class BlickUtils:
         if BlickUtils.is_empty(directory):
             return []
         
-        path = Path(directory)
+        # Ensure directory is a Path object
+        path = Path(str(directory))
         
         if not path.exists():
             return []
@@ -272,21 +304,18 @@ class BlickUtils:
         if ext is None or str(ext).strip() == '*':
             extensions = ['*']
         elif isinstance(ext, str):
-            # Removes the "." from extension if missing
-            extensions = [str(ext).strip() if str(ext).strip().startswith('.') else f'.{str(ext).strip()}']
+            # cleans up *.ext or simply ext to -> .ext
+            extensions = ['*.' + str(ext).strip().replace('*','').replace('.','')]
         elif isinstance(ext, list):
             # Extensions list
-            extensions = [str(e).strip() if str(e).strip().startswith('.') else f'.{str(e).strip()}' for e in ext]
+            extensions = ['*.' + str(e).strip().replace('*','').replace('.','') for e in ext if not BlickUtils.is_empty(e)]
         else:
             extensions = ['*']
         
         # Busca arquivos
         for extension in extensions:
             try:
-                if extension == '*':
-                    pattern = '*'
-                else:
-                    pattern = f'*{extension}'
+                pattern = f'{extension}'
                 
                 if recursive:
                     # Recursively searches in all subdirectories
@@ -392,17 +421,345 @@ class BlickUtils:
         df = pd.DataFrame(data)
         
         return df
+            
+
+    @staticmethod
+    def execute_cmd(cmd, working_dir='.', timeout=30):
+        """
+        Execute a command on the system.
         
+        Args:
+            cmd: Command string to execute
+            
+        Returns:
+            tuple: (exit_code, output_string)
+                - exit_code: Integer return code (0 for success)
+                - output_string: Combined stdout and stderr as string
+        """
+        try:
+            result = subprocess.run(
+                cmd,
+                shell=True,
+                capture_output=True,
+                text=True,
+                cwd=working_dir,
+                timeout=timeout
+            )
+            
+            # Combine stdout and stderr
+            output = result.stdout
+            if result.stderr:
+                output += result.stderr
+                
+            return (result.returncode, output)
+            
+        except Exception as e:
+            return (1, f"Error executing command: {str(e)}")
+
+
+    @staticmethod
+    def run_parallel(function_name, args_list, threads="auto"):
+        """
+        Run a function in parallel for each set of arguments in args_list.
         
+        Args:
+            function_name: The function to execute
+            args_list: List of arguments. Can be:
+                    - List of lists: [[arg1, arg2], [arg1, arg2], ...] for multi-arg functions
+                    - Simple list: [arg1, arg2, ...] for single-arg functions
+            threads: Number of threads to use:
+                    - "auto" or "1x": number of CPU cores
+                    - "Nx": N times the number of cores (e.g., "4x" = 4 * cores)
+                    - integer: exact number of threads
+        
+        Returns:
+            list: Results in the same order as args_list
+        """
+        import re
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+        
+        try:
+            from tqdm import tqdm
+        except ImportError:
+            print("Warning: install tqdm for progress bar: pip install tqdm")
+            tqdm = None
+
+        # Determine number of threads
+        num_cores = os.cpu_count() or 1
+        
+        try:
+            if threads is None:
+                max_workers = 1
+            elif str(threads).strip().lower() == "auto":
+                max_workers = num_cores
+            elif isinstance(threads, str) and threads.lower().endswith('x'):
+                multiplier = int(str(threads).replace('x', '').strip())
+                max_workers = int(multiplier * num_cores)
+            else:
+                max_workers = int(re.sub(r'\D', '', str(threads)))
+        except:
+            print(f"Warning: invalid threads value '{threads}', defaulting to number of CPU cores ({num_cores})")
+            max_workers = num_cores
+        
+        # Ensure at least 1 thread
+        max_workers = max(1, max_workers)
+        
+        # Prepare arguments - handle both single args and multi-args
+        normalized_args = []
+        for args in args_list:
+            if isinstance(args, (list, tuple)):
+                normalized_args.append(args)
+            else:
+                normalized_args.append([args])
+        
+        # Store results with their original index to maintain order
+        results = [None] * len(normalized_args)
+        
+        # Execute in parallel with progress bar
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            # Submit all tasks with their index
+            future_to_index = {
+                executor.submit(function_name, *args): idx 
+                for idx, args in enumerate(normalized_args)
+            }
+
+        if tqdm is None:
+            # Process completed tasks WITHOUT tqdm progress bar
+            for future in as_completed(future_to_index):
+                idx = future_to_index[future]
+                try:
+                    results[idx] = future.result()
+                except Exception as e:
+                    results[idx] = f"Error: {str(e)}"            
+        else:
+            # Process completed tasks with tqdm progress bar
+            with tqdm(total=len(normalized_args), desc="Processing") as pbar:
+                for future in as_completed(future_to_index):
+                    idx = future_to_index[future]
+                    try:
+                        results[idx] = future.result()
+                    except Exception as e:
+                        results[idx] = f"Error: {str(e)}"
+                    pbar.update(1)
+        
+        return results
+
+
+    @staticmethod
+    def get_hash(object):
+        """
+        Get MD5 hash of an object.
+        
+        Args:
+            object: Can be:
+                    - File path (str or Path): returns MD5 hash of file contents
+                    - Any other object: returns MD5 hash of string representation
+                    
+        Returns:
+            str: MD5 hash as hexadecimal string
+        """
+        import hashlib
+        from pathlib import Path
+
+        md5_hash = hashlib.md5()
+        
+        # Check if object is a file path
+        if isinstance(object, (str, Path)):
+            path = Path(object)
+            if path.exists() and path.is_file():
+                # Read file in chunks for memory efficiency
+                with open(path, 'rb') as f:
+                    for chunk in iter(lambda: f.read(4096), b''):
+                        md5_hash.update(chunk)
+                return md5_hash.hexdigest()
+        
+        # For non-file objects, hash their string representation
+        md5_hash.update(str(object).encode('utf-8'))
+        return md5_hash.hexdigest()
+
+
+    @staticmethod
+    def zip(input, target=None):
+        """
+        Zip a string, file, files matching a mask, or directory.
+        
+        Args:
+            input: Can be:
+                - String: text to compress (returns compressed base64 string)
+                - File path: path to file to zip
+                - File mask: pattern like "*.mp4" to zip matching files
+                - Directory: path to directory to zip
+            target: Output zip file path (optional)
+                    - For strings: ignored (returns compressed string)
+                    - For files/dirs: if None, uses input name + .zip
+                    - Automatically adds .zip extension if missing
+                    
+        Returns:
+            str: For string input: base64 compressed string
+                For file/dir input: path to created zip file
+        """
+        
+        import re
+        import zipfile
+        import zlib
+        import base64
+        from pathlib import Path
+        from glob import glob
+        
+        if BlickUtils.is_empty(input):
+            print("Input is empty")
+            return None
+        
+        str_in = str(input).strip()
+
+        # Handle file/directory zipping
+        is_path = False 
+        is_mask = False
+        try:
+            # Check if input is a file mask
+            is_mask = str_in.split(os.path.sep)[-1][0] in ['*', '?']
+
+            input_path = Path(str_in)
+            is_path = input_path.exists()
+        except Exception as e:
+            pass
+        
+        # Check if input is a string (not a file path nor a Mask)
+        if not is_mask and not is_path:
+            # Treat as string to compress
+            text_bytes = input.encode('utf-8')
+            compressed = zlib.compress(text_bytes)
+            return base64.b64encode(compressed).decode('utf-8')
+        
+        # Determine target zip file path if not defined
+        if target is None:
+            if is_mask:
+                # For file masks, use "files.zip" as default
+                files_mask = re.sub(r'[\?\*\.]', '', str_in.split(os.path.sep)[-1])
+                target = f"files_{files_mask}.zip"
+            else:
+                target = str(str_in)
+        
+        # Ensure .zip extension on target
+        target_ends = str(target)[-5:]
+        target_ends_no_ext = target_ends.split('.')[0]
+        target = str(target)[:-5] + target_ends_no_ext + '.zip'
+        
+        target_path = Path(target)
+        os.makedirs(target_path.parent, exist_ok=True)
+        
+        # Create zip file
+        with zipfile.ZipFile(target_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            
+            # Handle file mask (e.g., "*.mp4")
+            if is_mask:
+                masked_dir = os.path.sep.join(str_in.split(os.path.sep)[:-1])
+                masked_wildcard = '*' if '*' in str_in else '?'
+                masked_ext = str(str_in.split(masked_wildcard)[-1]).replace('.', '').strip()
+                matched_files = BlickUtils.get_files(directory=masked_dir, ext=f'*.{masked_ext}', recursive=False)
+                if not matched_files:
+                    print(f"No files match the pattern: {input}")
+                    return None
+
+                for file_path in matched_files:
+                    file_path = Path(file_path)
+                    if file_path.is_file():
+                        zipf.write(file_path, file_path.name)
+                return str(target_path)
+
+            # Handle directory
+            elif input_path.is_dir():
+                for root, dirs, files in os.walk(input_path):
+                    for file in files:
+                        file_path = Path(root) / file
+                        arcname = file_path.relative_to(input_path.parent)
+                        zipf.write(file_path, arcname)
+                return str(target_path)
+                    
+            # Handle single file
+            elif input_path.is_file():
+                matched_files = [str(input_path)]
+                zipf.write(input_path, input_path.name)
+                return str(target_path)
+            # Input does not exist
+            else:
+                print(f"Input does not exist: {input} - Use a valid file, directory, or file mask (i.e.: *.png)")
+                return None
+
+        return None
+
+
+    @staticmethod
+    def unzip(input, target_dir=None):
+        """
+        Unzip a file or decompress a string.
+        
+        Args:
+            input: Can be:
+                - Zip file path: path to zip file to extract
+                - Compressed string: base64 compressed string to decompress
+            target_dir: Target directory for extraction (optional)
+                        - For zip files: if None, creates directory with zip filename (without .zip)
+                        - For strings: ignored (returns decompressed string)
+                        
+        Returns:
+            str: For compressed string input: decompressed string
+                For zip file input: path to target directory
+        """
+        
+        import zipfile
+        import zlib
+        import base64
+        from pathlib import Path
+        
+        if BlickUtils.is_empty(input):
+            print("Input is empty")
+            return None
+        
+        str_in = str(input).strip()
+        input_path = Path(str_in)
+        
+        # Check if input is a zip file
+        if input_path.exists() and input_path.is_file() and str_in.lower().endswith('.zip'):
+            # Determine target directory
+            if target_dir is None:
+                # Remove .zip extension for directory name
+                target_dir = str_in[:-4]
+            
+            target_path = Path(str(target_dir))
+            
+            # Create target directory
+            os.makedirs(target_path, exist_ok=True)
+            
+            # Extract zip file
+            try:
+                with zipfile.ZipFile(input_path, 'r') as zipf:
+                    zipf.extractall(target_path)
+                return str(target_path)
+            except zipfile.BadZipFile:
+                print(f"Error: {input} is not a valid zip file")
+                return None
+            except Exception as e:
+                print(f"Error extracting zip file: {str(e)}")
+                return None
+        
+        # Otherwise, treat as compressed string
+        else:
+            try:
+                # Decode from base64
+                compressed_bytes = base64.b64decode(input)
+                
+                # Decompress
+                decompressed = zlib.decompress(compressed_bytes)
+                
+                return decompressed.decode('utf-8')
+            except Exception as e:
+                print(f"Error decompressing string: {str(e)}")
+                return None
+
+
 
 if __name__ == "__main__":    
-    bkt = BlickUtils
-
-    print('get_gpu_info(): ', bkt.get_gpu_info())
-    print('get_device(): ', bkt.get_device())
-    print('get_pil(invalid): ', bkt.get_pil('jkjshkadf'))
-    print('get_pil(url): ', bkt.get_pil('http://archive.net.im/images/TV.png').size)
-    print('get_pil(base64): ', bkt.get_pil('data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==').size)
-    print('get_files(): ', bkt.get_files())
-    print('get_dirs(): ', bkt.get_dirs())
-    print('dir2df(): \n', bkt.dir2df('.'))
+    from test import run_tests
+    run_tests() 
+    
