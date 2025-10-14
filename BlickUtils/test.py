@@ -9,19 +9,21 @@ import shutil
 from core import BlickUtils as bkt
 
 
-
 def run_tests():
     
     print("Running BlickUtils tests...\n")
     print('get_gpu_info(): ', bkt.get_gpu_info())
     print('get_device(): ', bkt.get_device())
+    print('get_urls(): \n', bkt.get_urls('bla bla bla https://google.com blabla http://test.de/test.png'))
+
     print('get_pil(invalid): ', bkt.get_pil('jkjshkadf'))
     print('get_pil(url): ', bkt.get_pil('http://archive.net.im/images/TV.png').size)
     print('get_pil(base64): ', bkt.get_pil('data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==').size)
+    
     print('get_files(): ', bkt.get_files())
     print('get_dirs(): ', bkt.get_dirs())
     print('dir2df(): \n', bkt.dir2df('.'))
-
+    
     # Execute command
     cmd = "ls -lah"
     res_code, res_out = bkt.execute_cmd(cmd)
@@ -110,8 +112,8 @@ def run_tests():
         
         print("Test 6: Unzip a compressed string")
         original_text = "Hello World! " * 100
-        compressed = BlickUtils.zip(original_text)
-        decompressed = BlickUtils.unzip(compressed)
+        compressed = bkt.zip(original_text)
+        decompressed = bkt.unzip(compressed)
         print(f"Original == Decompressed: {original_text == decompressed}")
         print(f"Decompressed (first 50 chars): {decompressed[:50]}...\n")
         
@@ -187,3 +189,10 @@ def run_tests():
                 os.remove(f)
             except:
                 pass    
+            
+            
+            
+
+if __name__ == "__main__":    
+    run_tests() 
+    

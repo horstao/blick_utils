@@ -1,15 +1,16 @@
 """
-Main utilities class for blick_utils
+Main utilities class for blickutils
 """
-import os
-import subprocess
 
 
 class BlickUtils:
     """
     A collection of static utility methods for Blick Technologies
     """
-
+    # All imports are done on demand to avoid unnecessary dependencies
+    # Placeholder for persistent lazy objects
+    _BLICK_OBJs = {}
+    
     @staticmethod
     def is_empty(obj):
         """
@@ -147,6 +148,35 @@ class BlickUtils:
         """Alias for get_gpu to maintain compatibility"""
         return BlickUtils.get_gpu(id)
 
+
+    @staticmethod
+    def get_urls(text):
+        """
+        Extract URLs from a given text string.
+        
+        Args:
+            text: Input text string
+        Returns:
+            List[str]: List of extracted URLs or None if none found
+        """
+        import re
+        
+        if BlickUtils.is_empty(text):
+            return None
+        
+        # Lazy use of Regex pattern to match URLs
+        url_pattern = BlickUtils._BLICK_OBJs.setdefault(
+            'url_pattern', re.compile(r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+')
+        )
+        
+        try:
+            # Find all URLs in the text
+            urls = re.findall(url_pattern, str(text))
+        
+            return urls if urls else None
+        except Exception as e:
+            return None
+
     
     @staticmethod
     def get_pil(whatever, flatten=True):
@@ -164,9 +194,8 @@ class BlickUtils:
             ValueError: If no valid input is provided or multiple inputs are provided
             ImportError: If required libraries are not installed
         """
+        import os
 
-        # Other imports are done on demand to avoid unnecessary dependencies
-        
         from PIL import Image as PIL_Image
         from PIL import ImageOps
         from io import BytesIO
@@ -179,18 +208,25 @@ class BlickUtils:
         if isinstance(whatever, PIL_Image.Image):
             pil_im = whatever
 
-        elif str(whatever).startswith("http://") or str(whatever).startswith("https://"):
+        elif str(whatever).startswith("http") or BlickUtils.get_urls(str(whatever)) is not None:
             # Load from URL
-            import requests
+            import httpx # HTTPx is preferred over requests for async support and better performance
+
+            httpx_client = BlickUtils._BLICK_OBJs.setdefault('httpx_client', httpx.Client())
+
             try:
-                response = requests.get(str(whatever).strip())
-                #response.raise_for_status()
+                if str(whatever).startswith("http"):
+                    url = str(whatever).strip()
+                else:
+                    url = BlickUtils.get_urls(str(whatever))[0] 
+                    
+                response = httpx_client.get(url)
                 pil_im = PIL_Image.open(BytesIO(response.content))
             except Exception as e:
                 print(f"Warning: Unable to get image from URL: {e}")
                 return None
 
-        elif os.path.isfile(whatever):
+        elif os.path.isfile(str(whatever).strip()):
             # Load from file path
             try:
                 pil_im = PIL_Image.open(whatever) 
@@ -405,6 +441,7 @@ class BlickUtils:
         Returns:
             pd.DataFrame: DataFrame with file paths and names
         """
+        import os
         import pandas as pd
         
         files = BlickUtils.get_files(directory=directory, ext=ext, recursive=recursive)
@@ -436,6 +473,8 @@ class BlickUtils:
                 - exit_code: Integer return code (0 for success)
                 - output_string: Combined stdout and stderr as string
         """
+        import subprocess
+
         try:
             result = subprocess.run(
                 cmd,
@@ -476,6 +515,7 @@ class BlickUtils:
             list: Results in the same order as args_list
         """
         import re
+        import os
         from concurrent.futures import ThreadPoolExecutor, as_completed
         
         try:
@@ -600,6 +640,7 @@ class BlickUtils:
         """
         
         import re
+        import os
         import zipfile
         import zlib
         import base64
@@ -707,6 +748,7 @@ class BlickUtils:
                 For zip file input: path to target directory
         """
         
+        import os
         import zipfile
         from pathlib import Path
         
