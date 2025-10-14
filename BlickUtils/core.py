@@ -130,11 +130,18 @@ class BlickUtils:
         """
         try:
             import torch
+            
+            if torch.cuda.is_available():
+                gpus = torch.cuda.device_count()
+                print(f'Found GPUs: {gpus} \\o/') 
+                if id < gpus:
+                    return torch.device(f'cuda:{id}')
+                else:
+                    return torch.device(f'cuda:{gpus}')
         except:
             print(f"Warning: install torch with CUDA for correct device detection: pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cu126     - Further info :https://pytorch.org/get-started/locally/")
-            return "cpu"
 
-        return torch.device(f"cuda:{id}" if torch.cuda.is_available() else "cpu")
+        return "cpu"
 
 
     @staticmethod
@@ -265,7 +272,8 @@ class BlickUtils:
             
             # Flatten to RGB if needed
             if flatten:
-                pil_im = pil_im.convert("RGB")
+                if pil_im.mode != "RGB":
+                    pil_im = pil_im.convert("RGB")
 
         return pil_im
     
