@@ -284,12 +284,15 @@ class BlickUtils:
         import base64
         from io import BytesIO
 
-        buffered = BytesIO()
+        # Make sure it's a PIL image
         im = BlickUtils.get_pil(pil_image, flatten=True)
+
         if im is None:
             return None
+
+        buffered = BytesIO()
         try:
-            im.save(buffered, format="PNG")
+            im.save(buffered, format="webp", quality=80)
             img_bytes = buffered.getvalue()
             return base64.b64encode(img_bytes).decode('utf-8')
         except Exception as e:
