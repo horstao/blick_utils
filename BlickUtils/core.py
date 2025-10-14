@@ -271,12 +271,14 @@ class BlickUtils:
     
 
     @staticmethod
-    def get_base64(pil_image):
+    def get_base64(pil_image, image_format="webp", quality=75):
         """
         Convert a PIL Image to base64 string.
         
         Args:
             pil_image: PIL Image object
+            image_format: Image format for encoding (default is "webp")
+            quality: Quality for encoding (1-100, default is 75)
             
         Returns:
             str: Base64 encoded string of the image
@@ -292,9 +294,24 @@ class BlickUtils:
 
         buffered = BytesIO()
         try:
-            im.save(buffered, format="webp", quality=80)
+            im.save(buffered, format=image_format, quality=quality)
             img_bytes = buffered.getvalue()
-            return base64.b64encode(img_bytes).decode('utf-8')
+            base64_str = base64.b64encode(img_bytes).decode('utf-8')
+
+            mime_types = {
+                'webp': 'image/webp',
+                'png': 'image/png',
+                'jpeg': 'image/jpeg',
+                'jpg': 'image/jpeg',
+                'gif': 'image/gif',
+                'bmp': 'image/bmp'
+            }
+            if str(image_format).strip() not in mime_types.keys():
+                return base64_str
+            else:
+                mime_type = mime_types.get(image_format.lower(), 'image/webp')
+                return f"data:{mime_type};base64,{base64_str}"    
+            
         except Exception as e:
             print(f"Warning: Unable to convert image to Base64: {e}")
             return None
