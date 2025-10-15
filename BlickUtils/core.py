@@ -10,6 +10,17 @@ class BlickUtils:
     # All imports are done on demand to avoid unnecessary dependencies
     # Placeholder for persistent lazy objects
     _BLICK_OBJs = {}
+
+
+    @staticmethod
+    def get_version():
+        from importlib.metadata import version
+        return version("blickutils")        
+    
+    @staticmethod
+    def version():
+        """Alias for get_version to maintain compatibility"""
+        return BlickUtils.get_version()
     
     @staticmethod
     def is_empty(obj):
@@ -574,11 +585,16 @@ class BlickUtils:
         from concurrent.futures import ThreadPoolExecutor, as_completed
         
         try:
-            from tqdm import tqdm
+            # Auto-detect if running in Jupyter and use appropriate tqdm
+            try:
+                get_ipython().__class__.__name__
+                from tqdm.notebook import tqdm
+            except (NameError, ImportError):
+                from tqdm import tqdm
         except ImportError:
             print("Warning: install tqdm for progress bar: pip install tqdm")
             tqdm = None
-
+        
         # Determine number of logical CPUs (threads)
         num_cores = os.cpu_count() or 1
         

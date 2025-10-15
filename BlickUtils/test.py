@@ -11,7 +11,7 @@ from core import BlickUtils as bkt
 
 def run_tests():
     
-    print("Running BlickUtils tests...\n")
+    print(f"Running BlickUtils version {bkt.get_version()} tests...\n")
     
     # Test get_gpu_info and get_device
     gpu_info = bkt.get_gpu_info()

@@ -4,11 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "BlickUtils"
-version = "0.5.10.17"
+version = "0.5.10.18"
 description = "A collection of utility functions for Blick Technologies"
 authors = [{ name = "Horst E.", email = "horstao@gmail.com" }]
 readme = "README.md"
-requires-python = ">=3.7"
+requires-python = ">=3.10"
 license = { text = "MIT" }
 
 classifiers = [
@@ -19,4 +19,5 @@ classifiers = [
 
 dependencies = [
     "httpx>=0.1.0",
+    "tomli>=2.0.0"
 ]
