@@ -625,7 +625,7 @@ class BlickUtils:
         results = [None] * len(normalized_args)
 
         if len(normalized_args) > 1000000:
-            print(f"Warning: This fucntion is not optimized for too many arguments - it will work but may be slow. consider other approaches. ")
+            print(f"Warning: This function is not optimized for so many arguments - it will work but may be slow. consider other approaches. ")
 
         # Execute in parallel with progress bar
         # ToDo - Fix tqdm on Windows Jupyter not updating properly
@@ -635,7 +635,7 @@ class BlickUtils:
             idx_args = list([(idx, args) for idx, args in enumerate(normalized_args)])
 
             # Prepare futures objects
-            iter_obj1 = idx_args if tqdm is None or len(idx_args) <= 100000 else tqdm(idx_args, desc="Preparing", total=len(idx_args))
+            iter_obj1 = idx_args if tqdm is None or len(normalized_args) < 50000 else tqdm(idx_args, desc="Preparing", total=len(idx_args))
             for item in iter_obj1:
                 idx, args = item
                 future_to_index[executor.submit(function_name, *args)] = idx
