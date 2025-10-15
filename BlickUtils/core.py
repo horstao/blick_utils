@@ -230,7 +230,7 @@ class BlickUtils:
                 response = httpx_client.get(url)
                 pil_im = PIL_Image.open(BytesIO(response.content))
             except Exception as e:
-                print(f"Warning: Unable to get image from URL: {e}")
+                #print(f"Warning: Unable to get image from URL: {e}")
                 return None
 
         elif os.path.isfile(str(whatever).strip()):
@@ -238,7 +238,8 @@ class BlickUtils:
             try:
                 pil_im = PIL_Image.open(whatever) 
             except Exception as e:
-                print(f"Warning: Unable to load image from {whatever}: {e}")
+                #print(f"Warning: Unable to load image from {whatever}: {e}")
+                return None
                 
         
         elif isinstance(whatever, (str)):
@@ -253,7 +254,7 @@ class BlickUtils:
                 image_data = base64.b64decode(base64_str)
                 pil_im = PIL_Image.open(BytesIO(image_data))
             except Exception as e:
-                print(f"Warning: Unable to get image from Base64: {e}")
+                #print(f"Warning: Unable to get image {str(whatever)[:25]}...: : {e}")
                 return None
         
         else:
@@ -264,18 +265,23 @@ class BlickUtils:
             try:
                 pil_im = PIL_Image.fromarray(whatever)
             except Exception as e:
-                print(f"Warning: Unable to convert numpy array to image: {e}")
+                #print(f"Warning: Unable to convert numpy array to image {str(whatever)[:25]}...: {e}")
+                return None
 
-        if pil_im is not None:   
-            # Fix EXIF orientation
-            pil_im = ImageOps.exif_transpose(pil_im)     
-            
-            # Flatten to RGB if needed
-            if flatten:
-                if pil_im.mode != "RGB":
-                    pil_im = pil_im.convert("RGB")
-
-        return pil_im
+        try:
+            if pil_im is not None:   
+                # Fix EXIF orientation
+                pil_im = ImageOps.exif_transpose(pil_im)     
+                
+                # Flatten to RGB if needed
+                if flatten:
+                    if pil_im.mode != "RGB":
+                        pil_im = pil_im.convert("RGB")
+            return pil_im
+        
+        except Exception as e:
+            #print(f"Warning: Unable to process image: {str(whatever)[:25]}...: {e}")
+            return None
     
 
     @staticmethod
