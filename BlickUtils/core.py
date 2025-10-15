@@ -570,12 +570,12 @@ class BlickUtils:
         Args:
             function_name: The function to execute
             args_list: List of arguments. Can be:
-                    - List of lists: [[arg1, arg2], [arg1, arg2], ...] for multi-arg functions
-                    - Simple list: [arg1, arg2, ...] for single-arg functions
+                - List of lists: [[arg1, arg2], [arg1, arg2], ...] for multi-arg functions
+                - Simple list: [arg1, arg2, ...] for single-arg functions
             threads: Number of threads to use:
-                    - "auto" or "1x" or -1: number of CPU cores
-                    - "Nx": N times the number of cores (e.g., "4x" = 4 * cores)
-                    - integer: exact number of threads
+                - "auto" or "1x" or -1: number of CPU cores
+                - "Nx": N times the number of cores (e.g., "4x" = 4 * cores)
+                - integer: exact number of threads
         
         Returns:
             list: Results in the same order as args_list
@@ -618,44 +618,56 @@ class BlickUtils:
         max_workers = max(1, max_workers)
         
         # Prepare arguments - handle both single args and multi-args
-        normalized_args = []
-        for args in args_list:
-            if isinstance(args, (list, tuple)):
-                normalized_args.append(args)
-            else:
-                normalized_args.append([args])
-        
-        # Store results with their original index to maintain order
+        normalized_args = [
+            args if isinstance(args, (list, tuple)) else [args] 
+            for args in args_list
+        ]
         results = [None] * len(normalized_args)
-        
+
+        if len(normalized_args) > 1000000:
+            print(f"Warning: This fucntion is not optimized for too many arguments - it will work but may be slow. consider other approaches. ")
+
         # Execute in parallel with progress bar
+        # ToDo - Fix tqdm on Windows Jupyter not updating properly
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             # Submit all tasks with their index
-            future_to_index = {
-                executor.submit(function_name, *args): idx 
-                for idx, args in enumerate(normalized_args)
-            }
+            future_to_index = {}
+            idx_args = list([(idx, args) for idx, args in enumerate(normalized_args)])
 
-            if tqdm is None:
-                # Process completed tasks WITHOUT tqdm progress bar
-                for future in as_completed(future_to_index):
-                    idx = future_to_index[future]
-                    try:
-                        results[idx] = future.result()
-                    except Exception as e:
-                        results[idx] = f"Error: {str(e)}"            
-            else:
-                # Process completed tasks with tqdm progress bar
-                with tqdm(total=len(normalized_args), desc="Processing") as pbar:
-                    for future in as_completed(future_to_index):
-                        idx = future_to_index[future]
-                        try:
-                            results[idx] = future.result()
-                        except Exception as e:
-                            results[idx] = f"Error: {str(e)}"
-                        pbar.update(1)
+            # Prepare futures objects
+            iter_obj1 = idx_args if tqdm is None or len(idx_args) <= 100000 else tqdm(idx_args, desc="Preparing", total=len(idx_args))
+            for item in iter_obj1:
+                idx, args = item
+                future_to_index[executor.submit(function_name, *args)] = idx
+
+            # Process completed tasks with tqdm progress bar
+            iter_obj2 = as_completed(future_to_index) if tqdm is None else tqdm(as_completed(future_to_index), desc="Processing", total=len(idx_args))
+            for future in iter_obj2:
+                idx = future_to_index[future]
+                try:
+                    results[idx] = future.result()
+                except Exception as e:
+                    results[idx] = f"Error: {str(e)}"
             
         return results
+
+
+    @staticmethod
+    def run_parallels(function_name, args_list, threads="auto"):
+        """Alias for run_parallel"""
+        return BlickUtils.run_parallel(function_name, args_list, threads)
+
+
+    @staticmethod
+    def parallel(function_name, args_list, threads="auto"):
+        """Alias for run_parallel"""
+        return BlickUtils.run_parallel(function_name, args_list, threads)
+
+
+    @staticmethod
+    def parallels(function_name, args_list, threads="auto"):
+        """Alias for run_parallel"""
+        return BlickUtils.run_parallel(function_name, args_list, threads)
 
 
     @staticmethod
