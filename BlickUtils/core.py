@@ -353,6 +353,8 @@ class BlickUtils:
         if BlickUtils.is_empty(directory):
             return []
         
+        ignore_list = ['.ipynb_checkpoints', '.DS_Store', '__MACOSX', '.Trash', '.localized', '.Spotlight-V100', '$RECYCLE.BIN', 'Thumbs.db', 'desktop.ini']
+        
         # Ensure directory is a Path object
         path = Path(str(directory))
         
@@ -382,15 +384,24 @@ class BlickUtils:
                 pattern = f'{extension}'
                 
                 if recursive:
-                    # Recursively searches in all subdirectories
-                    for file in path.rglob(pattern):
-                        if file.is_file():
-                            files.append(str(file.absolute()))
+                    files_list = path.rglob(pattern)
                 else:
-                    # Searches only in the specified directory
-                    for file in path.glob(pattern):
-                        if file.is_file():
+                    files_list = path.glob(pattern)
+                    
+                # Recursively searches in all subdirectories
+                for file in files_list:
+                    if file.is_file():
+                        include_file = True
+                        
+                        # Skip unwanted files
+                        for ignore_term in ignore_list:
+                            if ignore_term in str(file):
+                                include_file = False
+                                break
+                        
+                        if include_file:
                             files.append(str(file.absolute()))
+                            
             except PermissionError:
                 print(f"No permission to access '{directory}'")
                 continue
@@ -399,7 +410,6 @@ class BlickUtils:
             
         # Remove duplicates
         files = list(set(files))
-        files.sort()  # Ordena alfabeticamente
         
         return files
             
@@ -417,6 +427,7 @@ class BlickUtils:
             List[str]: List of directory paths
         """
         from pathlib import Path
+        ignore_list = ['.ipynb_checkpoints', '.DS_Store', '__MACOSX', '.Trash', '.localized', '.Spotlight-V100', '$RECYCLE.BIN', 'Thumbs.db', 'desktop.ini']
         
         if BlickUtils.is_empty(directory):
             return []
@@ -443,14 +454,24 @@ class BlickUtils:
             
             try:
                 if item.is_dir():
-                    dirs.append(str(item))
+                    include_dir = True
+                    
+                    # Skip unwanted directories
+                    for ignore_term in ignore_list:
+                        if ignore_term in str(item.absolute()):
+                            include_dir = False
+                            break
+                    
+                    if include_dir:
+                        dirs.append(str(item.absolute()))
+                    
             except PermissionError:
                 print(f"No permission to access '{item}'")
                 continue
             except Exception as e:
                 continue
         
-        return sorted(dirs)
+        return dirs
     
         
     @staticmethod 
@@ -535,7 +556,7 @@ class BlickUtils:
                     - List of lists: [[arg1, arg2], [arg1, arg2], ...] for multi-arg functions
                     - Simple list: [arg1, arg2, ...] for single-arg functions
             threads: Number of threads to use:
-                    - "auto" or "1x": number of CPU cores
+                    - "auto" or "1x" or -1: number of CPU cores
                     - "Nx": N times the number of cores (e.g., "4x" = 4 * cores)
                     - integer: exact number of threads
         
@@ -552,14 +573,16 @@ class BlickUtils:
             print("Warning: install tqdm for progress bar: pip install tqdm")
             tqdm = None
 
-        # Determine number of threads
+        # Determine number of logical CPUs (threads)
         num_cores = os.cpu_count() or 1
         
         try:
             if threads is None:
                 max_workers = 1
-            elif str(threads).strip().lower() == "auto":
+            elif str(threads).strip().lower() in ["-1", "auto", "1x"] :
                 max_workers = num_cores
+            elif str(threads).strip().lower() in ["max"] :
+                max_workers = num_cores * 8
             elif isinstance(threads, str) and threads.lower().endswith('x'):
                 multiplier = int(str(threads).replace('x', '').strip())
                 max_workers = int(multiplier * num_cores)
@@ -591,25 +614,25 @@ class BlickUtils:
                 for idx, args in enumerate(normalized_args)
             }
 
-        if tqdm is None:
-            # Process completed tasks WITHOUT tqdm progress bar
-            for future in as_completed(future_to_index):
-                idx = future_to_index[future]
-                try:
-                    results[idx] = future.result()
-                except Exception as e:
-                    results[idx] = f"Error: {str(e)}"            
-        else:
-            # Process completed tasks with tqdm progress bar
-            with tqdm(total=len(normalized_args), desc="Processing") as pbar:
+            if tqdm is None:
+                # Process completed tasks WITHOUT tqdm progress bar
                 for future in as_completed(future_to_index):
                     idx = future_to_index[future]
                     try:
                         results[idx] = future.result()
                     except Exception as e:
-                        results[idx] = f"Error: {str(e)}"
-                    pbar.update(1)
-        
+                        results[idx] = f"Error: {str(e)}"            
+            else:
+                # Process completed tasks with tqdm progress bar
+                with tqdm(total=len(normalized_args), desc="Processing") as pbar:
+                    for future in as_completed(future_to_index):
+                        idx = future_to_index[future]
+                        try:
+                            results[idx] = future.result()
+                        except Exception as e:
+                            results[idx] = f"Error: {str(e)}"
+                        pbar.update(1)
+            
         return results
 
 

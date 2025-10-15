@@ -103,16 +103,22 @@ def run_tests():
         return bkt.execute_cmd(cmd)
     
     # Test 1: Single argument function with simple list
+    print("Generating multhreaded test data...")
+    N = 1000
+    cands = list(range(N))
     print("Test 1: Single argument function with simple list")
-    results = bkt.run_parallel(square, [1, 2, 3, 4, 5], threads="auto")
-    print(f"Results: {results}")
-    assert results == [1, 4, 9, 16, 25], "Parallel square should return correct values"
+    results = bkt.run_parallel(square, cands, threads="16x")
+    print(f"Results: {len(results)}")
+    assert results == [x**2 for x in range(N)], "Parallel square should return correct values"
     
     # Test 2: Multiple argument function with list of lists
+    N=1000
     print("Test 2: Multiple argument function with list of lists")
-    results = bkt.run_parallel(multiply, [[2, 3], [4, 5], [6, 7]], threads=2)
-    print(f"Results: {results}")
-    assert results == [(2, 3, 6), (4, 5, 20), (6, 7, 42)], "Parallel multiply should return correct values"
+    pairs = [[n, n+1] for n in range(N)]
+    exp_results = [(n, n+1, n*(n+1)) for n in range(N)]
+    results = bkt.run_parallel(multiply, pairs, "max")
+    print(f"Results: {len(results)}")
+    assert results == exp_results, "Parallel multiply should return correct values"
     
     # Test 3: Using 8x threads
     print("Test 3: Using 8x threads")
