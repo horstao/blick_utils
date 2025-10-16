@@ -308,11 +308,11 @@ class BlickUtils:
     
 
     @staticmethod
-    def get_img(whatever, flatten=True):
+    def get_img(whatever, flatten=True, bg_fill=(0,0,0)):
         """
         Alias for get_pil to maintain compatibility
         """
-        return BlickUtils.get_pil(whatever, flatten)
+        return BlickUtils.get_pil(whatever, flatten=flatten, bg_fill=bg_fill)
 
 
     @staticmethod
@@ -336,7 +336,7 @@ class BlickUtils:
         from PIL import Image as PIL_Image
         from PIL import ImageChops, ImageFilter
         
-        im = BlickUtils.get_pil(whatever, flatten=flatten, bg_color=bg_fill)
+        im = BlickUtils.get_pil(whatever, flatten=flatten, bg_fill=bg_fill)
 
         if not im:
             return None
@@ -380,6 +380,7 @@ class BlickUtils:
                     im.save(os.path.join(save_to, target_filename))                    
             except:
                 pass
+
         return im
 
 
