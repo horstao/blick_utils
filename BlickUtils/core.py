@@ -378,7 +378,8 @@ class BlickUtils:
                     else:
                         target_filename = "crop.jpg"
                     im.save(os.path.join(save_to, target_filename))                    
-            except:
+            except Exception as e:
+                print(f"Error saving image with shape {im.size} to {save_to}")
                 pass
 
         return im
