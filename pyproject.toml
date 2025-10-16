@@ -4,9 +4,9 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "BlickUtils"
-version = "0.5.10.25"
+version = "0.5.10.26"
 description = "A collection of utility functions for Blick Technologies"
-authors = [{ name = "Horst E.", email = "horstao@gmail.com" }]
+authors = [{ name = "Horst E.", email = "horst@blicktek.com" }]
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }

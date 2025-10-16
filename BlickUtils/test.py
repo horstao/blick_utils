@@ -11,7 +11,9 @@ from core import BlickUtils as bkt
 
 def run_tests():
     
-    print(f"Running BlickUtils version {bkt.get_version()} tests...\n")
+    print(f"Running BlickUtils version {bkt.version()} tests...\n")
+
+    bkt.get_methods()
     
     # Test get_gpu_info and get_device
     gpu_info = bkt.get_gpu_info()
@@ -55,6 +57,9 @@ def run_tests():
     assert isinstance(base64_generated, str), "get_base64() should return a string"
     assert base64_generated.startswith('data:image'), "Base64 should have proper data URI prefix"
     
+    # Add tests for autocrop
+        
+    
     # Test round-trip: base64 -> PIL -> base64
     im2 = bkt.get_pil(base64_generated)
     print(f'get_pil(generated base64): {im2.size}')
@@ -66,6 +71,8 @@ def run_tests():
     print(f'get_files(): {files}')
     assert isinstance(files, list), "get_files() should return a list"
     
+    # Add test for get_parent, get_parents, get_filename
+    
     # Test get_dirs
     dirs = bkt.get_dirs()
     print(f'get_dirs(): {dirs}')
@@ -76,6 +83,8 @@ def run_tests():
     print(f'dir2df(): {df.shape}')
     assert df is not None, "dir2df() should return a dataframe"
     assert len(df) > 0, "Dataframe should have rows"
+    
+    # Add test for split_df
     
     # Test execute_cmd
     cmd = "ls -lah"
