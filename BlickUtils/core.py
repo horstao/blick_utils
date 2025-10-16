@@ -324,7 +324,7 @@ class BlickUtils:
 
         Args:
             whatever: whatever can be loaded as image (path, url, pil_image, numpy array, base64)
-            save_to: If defined, saves the image on the target filename
+            save_to: If defined, saves the image on the save_to filename or on the save_to directory with same name as whatever
             flatten: if returns RGB or not
             bg_fill: color to fill transparency with
             strenth (int): [0-255] Tolerance threshold for color difference to consider as content.
