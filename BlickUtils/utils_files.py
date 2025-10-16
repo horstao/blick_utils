@@ -1,4 +1,7 @@
-from common import BlickCommon
+try:
+    from .common import BlickCommon
+except:
+    from common import BlickCommon
 
 
 class BlickFiles():

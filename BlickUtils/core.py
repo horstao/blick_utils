@@ -1,9 +1,19 @@
-from common import BlickCommon
-from utils_infra import BlickInfra
-from utils_files import BlickFiles
-from utils_image import BlickImage
-from utils_df import BlickDF
-from utils_process import BlickProcess
+try:
+    # Try relative imports (for package use)
+    from .common import BlickCommon
+    from .utils_infra import BlickInfra
+    from .utils_files import BlickFiles
+    from .utils_image import BlickImage
+    from .utils_df import BlickDF
+    from .utils_process import BlickProcess
+except ImportError:
+    # Local Tests
+    from common import BlickCommon
+    from utils_infra import BlickInfra
+    from utils_files import BlickFiles
+    from utils_image import BlickImage
+    from utils_df import BlickDF
+    from utils_process import BlickProcess
 
 
 class BlickUtils(BlickCommon, BlickFiles, BlickInfra, BlickImage, BlickDF, BlickProcess):
@@ -66,7 +76,15 @@ class BlickUtils(BlickCommon, BlickFiles, BlickInfra, BlickImage, BlickDF, Blick
         print('GPU:    ', json.dumps(BlickUtils.get_gpu_info()))
         return None
 
+    @staticmethod
+    def methods():
+        """ Alias for get_methods"""
+        BlickUtils.get_methods()
 
+    @staticmethod
+    def info():
+        """ Alias for get_info"""
+        BlickUtils.get_info()
 
 
 

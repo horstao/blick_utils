@@ -1,5 +1,7 @@
-from utils_files import BlickFiles
-
+try:
+    from .utils_files import BlickFiles
+except:
+    from utils_files import BlickFiles
 
 class BlickDF():
     

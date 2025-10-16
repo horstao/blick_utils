@@ -50,7 +50,11 @@ class BlickInfra:
         mem_perc = int(mem.percent) /100
         mem_use = int(mem.used / (1024 * 1024))
         total_mb = int(mem.total / (1024 * 1024))
-        return mem_perc, mem_use, total_mb
+        return {
+            "mem_usage_perc": mem_perc, 
+            "mem_usage_mb": mem_use, 
+            "mem_total_mb": total_mb
+        }
         
         
     @staticmethod
