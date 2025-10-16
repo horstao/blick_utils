@@ -197,7 +197,7 @@ class BlickUtils:
 
     
     @staticmethod
-    def get_pil(whatever, flatten=True, bg_fill=(0,0,0)):
+    def get_pil(whatever, flatten=True, bg_fill=(255,255,255)):
         """
         Get a Pillow Image from various sources
         
@@ -308,7 +308,7 @@ class BlickUtils:
     
 
     @staticmethod
-    def get_img(whatever, flatten=True, bg_fill=(0,0,0)):
+    def get_img(whatever, flatten=True, bg_fill=(255,255,255)):
         """
         Alias for get_pil to maintain compatibility
         """
@@ -316,7 +316,7 @@ class BlickUtils:
 
 
     @staticmethod
-    def autocrop(whatever, save_to=None, flatten=True, bg_fill = (0,0,0), strength=15):
+    def autocrop(whatever, save_to=None, flatten=True, bg_fill=(255,255,255), strength=15):
         """
         Automatically crops uniform borders from a PIL image.
         The background color is taken from pixel (0, 0).
@@ -366,9 +366,9 @@ class BlickUtils:
             try:
                 if BlickUtils.get_ext(save_to):
                     # Save to is a filename
-                    parent_dir = BlickUtils.get_parent(save_to)
-                    if parent_dir:
-                        os.makedirs(parent_dir, exist_ok=True)
+                    parent_dirs = BlickUtils.get_fulldir(save_to)
+                    if parent_dirs:
+                        os.makedirs(parent_dirs, exist_ok=True)
                     im.save(save_to)
                 elif len(str(save_to)) < 250:
                     # Consider save_to as a dir
@@ -621,6 +621,25 @@ class BlickUtils:
     def get_parent_dir(filename):
         """Alias for get_parent_dir"""
         return BlickUtils.get_parent(filename)
+
+
+    @staticmethod
+    def get_fulldir(filename):
+        """
+        Returns the full parent directory path of the given file.
+
+        Args:
+            filename (str): The full file path.
+
+        Returns:
+            str: The full path to the parent directory.
+        """
+        import os 
+        
+        parents = os.path.dirname(str(filename))
+        if BlickUtils.is_empty(parents):
+            return None
+        return parents 
 
 
     @staticmethod
