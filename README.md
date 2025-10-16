@@ -4,7 +4,7 @@ Blick Technologies Python Utilities
 ## 1 - Installation
 
 ```bash
-pip install git+https://github.com/yourusername/blick_utils.git
+pip install git+https://github.com/horstao/blick_utils.git
 ```
 
 ## 2 - Usage
