@@ -197,13 +197,14 @@ class BlickUtils:
 
     
     @staticmethod
-    def get_pil(whatever, flatten=True):
+    def get_pil(whatever, flatten=True, bg_fill=(0,0,0)):
         """
         Get a Pillow Image from various sources
         
         Args:
             whatever: Input which can be a URL, file path, numpy array, or base64 string
             flatten: Whether to convert image to RGB (3 channels)
+            bg_color: Background color for flattening (default is black)
             
         Returns:
             PIL.Image.Image: Pillow Image object
@@ -285,15 +286,104 @@ class BlickUtils:
                 pil_im = ImageOps.exif_transpose(pil_im)     
                 
                 # Flatten to RGB if needed
-                if flatten:
-                    if pil_im.mode != "RGB":
-                        pil_im = pil_im.convert("RGB")
+                if flatten and pil_im.mode !=  'RGB':
+                    # SAFE method to convert RGBA to RGB avoiding PIL bugs
+                    # This composites the image onto a solid background
+                    
+                    pil_im = pil_im.convert('RGBA')
+                    
+                    # Create a new RGB background with the specified color
+                    bg = PIL_Image.new('RGB', pil_im.size, bg_fill)
+                    
+                    # Paste the image onto the background using alpha channel as mask
+                    # This properly handles semi-transparent pixels
+                    bg.paste(pil_im, mask=pil_im.split()[3])  # split()[3] is the alpha channel
+                    
+                    pil_im = bg
             return pil_im
         
         except Exception as e:
             #print(f"Warning: Unable to process image: {str(whatever)[:25]}...: {e}")
             return None
     
+
+    @staticmethod
+    def get_img(whatever, flatten=True):
+        """
+        Alias for get_pil to maintain compatibility
+        """
+        return BlickUtils.get_pil(whatever, flatten)
+
+
+    @staticmethod
+    def autocrop(whatever, save_to=None, flatten=True, bg_fill = (0,0,0), strength=15):
+        """
+        Automatically crops uniform borders from a PIL image.
+        The background color is taken from pixel (0, 0).
+        A border is removed if the difference from the background is below a threshold.
+
+        Args:
+            whatever: whatever can be loaded as image (path, url, pil_image, numpy array, base64)
+            save_to: If defined, saves the image on the target filename
+            flatten: if returns RGB or not
+            bg_fill: color to fill transparency with
+            strenth (int): [0-255] Tolerance threshold for color difference to consider as content.
+
+        Returns:
+            PIL Image.Image: Cropped image without uniform borders.
+        """
+        import os
+        from PIL import Image as PIL_Image
+        from PIL import ImageChops, ImageFilter
+        
+        im = BlickUtils.get_pil(whatever, flatten=flatten, bg_color=bg_fill)
+
+        if not im:
+            return None
+        
+        smoothed = im.filter(ImageFilter.SMOOTH)
+
+        # Get background color from top-left pixel
+        bg_color = smoothed.getpixel((0, 0))
+
+        # Create a solid background image with the same color
+        bg = PIL_Image.new(smoothed.mode, smoothed.size, bg_color)
+
+        # Compute the difference between the image and the background
+        diff = ImageChops.difference(smoothed, bg)
+
+        # Enhance the difference to filter out small variations
+        diff = ImageChops.add(diff, diff, 3.0, -strength)
+
+        # Get bounding box of significant content
+        bbox = diff.getbbox()
+
+        # Crop the image if content is found
+        if bbox:
+            im = im.crop(bbox)
+
+        if save_to:
+            try:
+                if BlickUtils.get_ext(save_to):
+                    # Save to is a filename
+                    parent_dir = BlickUtils.get_parent(save_to)
+                    if parent_dir:
+                        os.makedirs(parent_dir, exist_ok=True)
+                    im.save(save_to)
+                elif len(str(save_to)) < 250:
+                    # Consider save_to as a dir
+                    os.makedirs(save_to, exist_ok=True)
+                    if os.path.exists(str(whatever).strip()):
+                        target_filename = BlickUtils.get_filename(str(whatever))
+                    else:
+                        target_filename = "crop.jpg"
+                    im.save(os.path.join(save_to, target_filename))                    
+            except:
+                pass
+        return im
+
+
+
 
     @staticmethod
     def get_base64(pil_image, image_format="webp", quality=75):
@@ -341,13 +431,6 @@ class BlickUtils:
             print(f"Warning: Unable to convert image to Base64: {e}")
             return None
                     
-    
-    @staticmethod
-    def get_img(whatever, flatten=True):
-        """
-        Alias for get_pil to maintain compatibility
-        """
-        return BlickUtils.get_pil(whatever, flatten)
     
 
     @staticmethod
@@ -490,6 +573,69 @@ class BlickUtils:
         
         return dirs
     
+
+
+    @staticmethod
+    def get_ext(filename):
+        """
+        Returns the file extension of the filename.
+
+        Args:
+            filename (str): The full filename or path.
+
+        Returns:
+            str: The file extension (without the dot).
+        """
+        import os
+        
+        trimmed = str(filename).strip()[-5:]         
+        ext = "." + trimmed.split(".")[-1]
+    
+        if str(filename).strip().endswith(ext):
+            return ext
+        return None
+
+
+    @staticmethod
+    def get_parent(filename):
+        """
+        Returns the immediate parent directory of the given file path.
+
+        Args:
+            filename (str): The full file path.
+
+        Returns:
+            str: The name of the immediate parent directory.
+        """
+        import os 
+
+        parent = os.path.basename(os.path.dirname(str(filename).strip()))
+        if BlickUtils.is_empty(parent):
+            return None
+        return parent 
+
+
+    @staticmethod
+    def get_parent_dir(filename):
+        """Alias for get_parent_dir"""
+        return BlickUtils.get_parent(filename)
+
+
+    @staticmethod
+    def get_filename(filepath):
+        """
+        Returns the filename from a full file path.
+
+        Args:
+            filepath (str): The full path to the file.
+
+        Returns:
+            str: The filename with extension.
+        """
+        import os 
+        return os.path.basename(str(filepath).strip())
+
+
         
     @staticmethod 
     def dir2df(directory='.', ext='*', recursive=False):
