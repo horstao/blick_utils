@@ -1,7 +1,4 @@
-try:
-    from .utils_files import BlickFiles
-except:
-    from utils_files import BlickFiles
+import os
 
 class BlickDF():
     
@@ -21,8 +18,12 @@ class BlickDF():
         Returns:
             pd.DataFrame: DataFrame with file paths and names
         """
-        import os
         import pandas as pd
+
+        try:
+            from .utils_files import BlickFiles
+        except:
+            from utils_files import BlickFiles
         
         files = BlickFiles.get_files(directory=directory, ext=ext, recursive=recursive)
         

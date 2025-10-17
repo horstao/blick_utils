@@ -1,7 +1,4 @@
-try:
-    from .common import BlickCommon
-except:
-    from common import BlickCommon
+import os
 
 class BlickImage():
 
@@ -25,11 +22,15 @@ class BlickImage():
             ValueError: If no valid input is provided or multiple inputs are provided
             ImportError: If required libraries are not installed
         """
-        import os
 
         from PIL import Image as PIL_Image
         from PIL import ImageOps
         from io import BytesIO
+
+        try:
+            from .common import BlickCommon
+        except:
+            from common import BlickCommon
 
         if BlickCommon.is_empty(whatever):
             return None
@@ -136,9 +137,13 @@ class BlickImage():
         Returns:
             PIL Image.Image: Cropped image without uniform borders.
         """
-        import os
         from PIL import Image as PIL_Image
         from PIL import ImageChops, ImageFilter
+
+        try:
+            from .common import BlickCommon
+        except:
+            from common import BlickCommon
         
         im = BlickImage.get_pil(whatever, flatten=flatten, bg_fill=bg_fill)
 
@@ -206,6 +211,12 @@ class BlickImage():
         """
         import base64
         from io import BytesIO
+
+        try:
+            from .common import BlickCommon
+        except:
+            from common import BlickCommon
+
 
         # Make sure it's a PIL image
         im = BlickImage.get_pil(pil_image, flatten=True)

@@ -1,12 +1,8 @@
-try:
-    from .common import BlickCommon
-except:
-    from common import BlickCommon
-
+import re
+import os
 
 class BlickFiles():
     
-
     @staticmethod
     def get_files(directory='.', ext='*', recursive=False):
         """
@@ -23,6 +19,11 @@ class BlickFiles():
             List[str]: full paths of matching files
         """
         from pathlib import Path
+
+        try:
+            from .common import BlickCommon
+        except:
+            from common import BlickCommon
         
         if BlickCommon.is_empty(directory):
             return []
@@ -89,7 +90,7 @@ class BlickFiles():
             
 
     @staticmethod
-    def get_dirs(directory='.', recursive = False):
+    def get_dirs(directory='.'):
         """
         Get all directories in a directory
         
@@ -101,6 +102,11 @@ class BlickFiles():
             List[str]: List of directory paths
         """
         from pathlib import Path
+        try:
+            from .common import BlickCommon
+        except:
+            from common import BlickCommon
+
         ignore_list = ['.ipynb_checkpoints', '.DS_Store', '__MACOSX', '.Trash', '.localized', '.Spotlight-V100', '$RECYCLE.BIN', 'Thumbs.db', 'desktop.ini']
         
         if BlickCommon.is_empty(directory):
@@ -116,12 +122,7 @@ class BlickFiles():
         
         dirs = []
         
-        if recursive:
-            pattern = "**/*"
-        else:
-            pattern = "*"
-        
-        for item in dir_path.glob(pattern):
+        for item in dir_path.glob("*"):
             # Skip .. and . entries
             if item.name in ('.', '..'):
                 continue
@@ -144,9 +145,8 @@ class BlickFiles():
                 continue
             except Exception as e:
                 continue
-        
+
         return dirs
-    
 
 
     @staticmethod
@@ -181,7 +181,10 @@ class BlickFiles():
         Returns:
             str: The name of the immediate parent directory.
         """
-        import os 
+        try:
+            from .common import BlickCommon
+        except:
+            from common import BlickCommon
 
         parent = os.path.basename(os.path.dirname(str(filename).strip()))
         if BlickCommon.is_empty(parent):
@@ -206,7 +209,10 @@ class BlickFiles():
         Returns:
             str: The full path to the parent directory.
         """
-        import os 
+        try:
+            from .common import BlickCommon
+        except:
+            from common import BlickCommon
         
         parents = os.path.dirname(str(filename))
         if BlickCommon.is_empty(parents):
@@ -255,13 +261,17 @@ class BlickFiles():
                 For file/dir input: path to created zip file
         """
         
-        import re
-        import os
         import zipfile
         import zlib
         import base64
         from pathlib import Path
         from glob import glob
+
+        try:
+            from .common import BlickCommon
+        except:
+            from common import BlickCommon
+
         
         if BlickCommon.is_empty(input):
             print("Input is empty")
@@ -364,10 +374,15 @@ class BlickFiles():
                 For zip file input: path to target directory
         """
         
-        import os
         import zipfile
         from pathlib import Path
+        from tqdm import tqdm
         
+        try:
+            from .common import BlickCommon
+        except:
+            from common import BlickCommon
+
         if BlickCommon.is_empty(input):
             print("Input is empty")
             return None
@@ -390,7 +405,13 @@ class BlickFiles():
             # Extract zip file
             try:
                 with zipfile.ZipFile(input_path, 'r') as zipf:
-                    zipf.extractall(target_path)
+                    # Get list of files in the archive
+                    members = zipf.namelist()
+                    
+                    # Extract with progress bar
+                    for member in tqdm(members, desc="Extracting", unit="file"):
+                        zipf.extract(member, target_path)
+                        
                 return str(target_path)
             except zipfile.BadZipFile:
                 print(f"Error: {input} is not a valid zip file")
@@ -405,13 +426,22 @@ class BlickFiles():
             import base64
             try:
                 # Decode from base64
-                compressed_bytes = base64.b64decode(input)
-                
-                # Decompress
-                decompressed = zlib.decompress(compressed_bytes)
-                
-                return decompressed.decode('utf-8')
+                with tqdm(total=3, desc="Decompressing", unit="step") as pbar:
+                    pbar.set_description("Decoding base64")
+                    compressed_bytes = base64.b64decode(input)
+                    pbar.update(1)
+                    
+                    # Decompress
+                    pbar.set_description("Decompressing")
+                    decompressed = zlib.decompress(compressed_bytes)
+                    pbar.update(1)
+                    
+                    # Decode to string
+                    pbar.set_description("Decoding UTF-8")
+                    result = decompressed.decode('utf-8')
+                    pbar.update(1)
+                    
+                return result
             except Exception as e:
                 print(f"Error decompressing string: {str(e)}")
                 return None
-

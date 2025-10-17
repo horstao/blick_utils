@@ -1,3 +1,6 @@
+import os
+import re
+
 class BlickCommon:
 
     # Placeholder for persistent lazy objects
@@ -9,7 +12,6 @@ class BlickCommon:
         """
         Returns True if the object is considered empty (None, empty string, empty list, etc.)
         """
-        import re
         
         if obj is None:
             return True
@@ -42,7 +44,6 @@ class BlickCommon:
         Returns:
             List[str]: List of extracted URLs or None if none found
         """
-        import re
         
         if BlickCommon.is_empty(text):
             return None

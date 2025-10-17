@@ -1,3 +1,5 @@
+import re
+import os
 
 class BlickProcess():
     
@@ -55,14 +57,11 @@ class BlickProcess():
         Returns:
             list: Results in the same order as args_list
         """
-        import re
-        import os
         from concurrent.futures import ThreadPoolExecutor, as_completed
         
         try:
             # Auto-detect if running in Jupyter and use appropriate tqdm
             try:
-                get_ipython().__class__.__name__
                 from tqdm.notebook import tqdm
             except (NameError, ImportError):
                 from tqdm import tqdm
