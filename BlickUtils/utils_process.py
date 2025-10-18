@@ -60,11 +60,7 @@ class BlickProcess():
         from concurrent.futures import ThreadPoolExecutor, as_completed
         
         try:
-            # Auto-detect if running in Jupyter and use appropriate tqdm
-            try:
-                from tqdm.notebook import tqdm
-            except (NameError, ImportError):
-                from tqdm import tqdm
+            from tqdm import tqdm
         except ImportError:
             print("Warning: install tqdm for progress bar: pip install tqdm")
             tqdm = None
