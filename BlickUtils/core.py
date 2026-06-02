@@ -55,9 +55,9 @@ class BlickUtils(BlickCommon, BlickFiles, BlickInfra, BlickImage, BlickDF, Blick
 
                     # Get the first line of docstring
                     doc = inspect.getdoc(method)
-                    doc_first_line = doc.split('\n')[0] if doc else ""
+                    doc_first_line = '\n\t'.join(doc.split('\n')) if doc else ""
                                     
-                    print(f"  {method_name}{sig} -> {doc_first_line}")
+                    print(f"  {method_name}{sig}: \n\t{doc_first_line}\n\n")
             return None
 
     

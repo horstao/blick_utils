@@ -2,7 +2,7 @@
 blick_utils - A collection of utility functions
 """
 
-__version__ = "0.5.10.33"
+__version__ = "26.6.2"
 
 from .core import BlickUtils
 

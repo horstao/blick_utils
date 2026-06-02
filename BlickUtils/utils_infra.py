@@ -4,7 +4,7 @@ class BlickInfra:
     
     @staticmethod
     def get_cpu():
-        """" 
+        """
             Gets CPU usage percentage for each core and calculate average 
             
             Returns:
@@ -37,7 +37,7 @@ class BlickInfra:
 
     @staticmethod
     def get_mem():
-        """" 
+        """
             Gets Memory usage percentage for each core and calculate average 
             
             Returns:

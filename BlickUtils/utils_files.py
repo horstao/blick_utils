@@ -160,7 +160,6 @@ class BlickFiles():
         Returns:
             str: The file extension (without the dot).
         """
-        import os
         
         trimmed = str(filename).strip()[-5:]         
         ext = "." + trimmed.split(".")[-1]
@@ -354,6 +353,22 @@ class BlickFiles():
                 return None
 
         return None
+
+
+    @staticmethod
+    def fn_has_same_size(filename_a, filename_b, th_bytes=100):
+        """
+        Check if two files have sizes within +/- th_bytes of each other.
+        Returns False if either file cannot be accessed.
+        """
+        try:
+            sa = os.path.getsize(str(filename_a))
+            sb = os.path.getsize(str(filename_b))
+            return abs(sa - sb) <= th_bytes
+        except Exception as e:
+            print(f"Error occurred while checking file sizes: {e}")
+
+        return False
 
 
     @staticmethod

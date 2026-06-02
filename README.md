@@ -33,7 +33,7 @@ dirs = bkt.get_dirs(dir="/path/to/dir", recursive=True)
 
 ## Requirements
 
-- Python >= 3.7
+- Python >= 3.10
 - torch (for GPU utilities)
 - Pillow (for image utilities)
 - numpy (for image array handling)

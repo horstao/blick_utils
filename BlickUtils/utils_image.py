@@ -121,7 +121,7 @@ class BlickImage():
     
 
     @staticmethod
-    def autocrop(whatever, save_to=None, flatten=True, bg_fill=(255,255,255), strength=15):
+    def autocrop(whatever, flatten=True, bg_fill=(255,255,255), strength=15, smooth=True):
         """
         Automatically crops uniform borders from a PIL image.
         The background color is taken from pixel (0, 0).
@@ -129,7 +129,6 @@ class BlickImage():
 
         Args:
             whatever: whatever can be loaded as image (path, url, pil_image, numpy array, base64)
-            save_to: If defined, saves the image on the save_to filename or on the save_to directory with same name as whatever
             flatten: if returns RGB or not
             bg_fill: color to fill transparency with
             strenth (int): [0-255] Tolerance threshold for color difference to consider as content.
@@ -150,7 +149,10 @@ class BlickImage():
         if not im:
             return None
         
-        smoothed = im.filter(ImageFilter.SMOOTH)
+        if smooth:
+            smoothed = im.filter(ImageFilter.SMOOTH)
+        else:
+            smoothed = im
 
         # Get background color from top-left pixel
         bg_color = smoothed.getpixel((0, 0))
@@ -171,29 +173,7 @@ class BlickImage():
         if bbox:
             im = im.crop(bbox)
 
-        if save_to:
-            try:
-                if BlickImage.get_ext(save_to):
-                    # Save to is a filename
-                    parent_dirs = BlickImage.get_fulldir(save_to)
-                    if parent_dirs:
-                        os.makedirs(parent_dirs, exist_ok=True)
-                    im.save(save_to)
-                elif len(str(save_to)) < 250:
-                    # Consider save_to as a dir
-                    os.makedirs(save_to, exist_ok=True)
-                    if os.path.exists(str(whatever).strip()):
-                        target_filename = BlickImage.get_filename(str(whatever))
-                    else:
-                        target_filename = "crop.jpg"
-                    im.save(os.path.join(save_to, target_filename))                    
-            except Exception as e:
-                print(f"Error saving image with shape {im.size} to {save_to}")
-                pass
-
         return im
-
-
 
 
     @staticmethod
@@ -247,5 +227,106 @@ class BlickImage():
         except Exception as e:
             print(f"Warning: Unable to convert image to Base64: {e}")
             return None
-                    
-    
+
+
+    @staticmethod                    
+    def has_same_resolution(pil_a, pil_b , th_px=1):
+        """
+        Check if image dimensions are within +/- th_px for both width and height.
+        """
+
+        wa, ha = pil_a.size
+        wb, hb = pil_b.size
+        return abs(wa - wb) <= th_px and abs(ha - hb) <= th_px
+
+
+    @staticmethod                    
+    def get_same_resolution(pil_a, pil_b):
+        """
+        Resize pil_a to have the same resolution as pil_b using LANCZOS.
+        """
+        from PIL import Image as PIL_Image
+
+        # Pillow compatibility for LANCZOS constant
+        try:
+            LANCZOS = PIL_Image.Resampling.LANCZOS
+        except AttributeError:
+            LANCZOS = PIL_Image.LANCZOS
+        
+        if LANCZOS:                    
+            return pil_a.resize(pil_b.size, resample=LANCZOS)
+
+        return pil_a.resize(pil_b.size)
+
+
+    @staticmethod                    
+    def get_median(pil_im, radius=3):
+        """
+        Apply median blur. Radius is converted to an odd kernel size (2*radius+1).
+        """
+
+        from PIL import ImageFilter
+        size = max(1, int(radius) * 2 + 1)
+
+        return pil_im.filter(ImageFilter.MedianFilter(size=size))
+
+
+    @staticmethod                    
+    def get_gray(pil_im):
+        """
+        Convert image to 8-bit grayscale ('L').
+        """
+        from PIL import ImageOps
+        
+        return ImageOps.grayscale(pil_im)
+
+
+    @staticmethod                    
+    def posterize(pil_im, qtd_bits=8):
+        """
+        Posterize image to qtd_bits per channel (1-8).
+        Converts to RGB if needed for consistent behavior.
+        """
+        
+        from PIL import ImageOps
+        
+        bits = max(1, min(8, int(qtd_bits)))
+        im = pil_im if pil_im.mode in ("L", "RGB") else pil_im.convert("RGB")
+        
+        return ImageOps.posterize(im, bits)
+
+
+    @staticmethod                    
+    def diff_im(pil_a, pil_b, diff_th=10):
+        """
+        Count how many pixels have (b - a) > diff_th (in grayscale 0-255).
+        Returns:
+        - qtd of different pixels (int)
+        - a black 'L' image with different points in white (255)
+        If sizes differ, pil_a is resized to pil_b's size using LANCZOS.
+        """
+        
+        from PIL import Image as PIL_Image
+        
+        # Ensure same resolution
+        if pil_a.size != pil_b.size:
+            pil_a = BlickImage.get_same_resolution(pil_a, pil_b)
+
+        # Convert to grayscale
+        a_gray = BlickImage.get_gray(pil_a)
+        b_gray = BlickImage.get_gray(pil_b)
+
+        # Compute directional difference (b - a)
+        import numpy as np
+        a_np = np.asarray(a_gray, dtype=np.int16)
+        b_np = np.asarray(b_gray, dtype=np.int16)
+        diff = b_np - a_np
+
+        mask = diff > int(diff_th)
+        qtd_pixels = int(mask.sum())
+
+        out = np.zeros_like(a_np, dtype=np.uint8)
+        out[mask] = 255
+        pil_difference = PIL_Image.fromarray(out, mode="L")
+
+        return qtd_pixels, pil_difference
