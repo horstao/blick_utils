@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "BlickUtils"
-version = "26.6.2"
+version = "26.6.25"
 description = "A collection of utility functions for Blick Technologies"
 authors = [{ name = "Horst E.", email = "horst@blicktek.com" }]
 readme = "README.md"
@@ -19,5 +19,8 @@ classifiers = [
 
 dependencies = [
     "httpx>=0.1.0",
+    "tqdm",
+    "Pillow",
+    "pillow-heif",
 ]
 
